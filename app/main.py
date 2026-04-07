@@ -6,7 +6,6 @@ from app.database import SessionLocal, engine, Base
 from app import models
 from app.models import ShipmentStatus
 
-from sqlalchemy import Enum as SAEnum
 
 Base.metadata.create_all(bind=engine)
 
@@ -72,8 +71,7 @@ def get_shipment(tracking_number: str, db: Session = Depends(get_db)):
 @app.patch("/shipments/{tracking_number}/status")
 def update_status(tracking_number: str, update: ShipmentUpdate, db: Session = Depends(get_db)):
     shipment = db.query(models.Shipment).filter(
-        models.Shipment.tracking_number == tracking_number
-    ).first()
+        models.Shipment.tracking_number == tracking_number).first()
     if not shipment:
         raise HTTPException(status_code=404, detail="Shipment not found")
 
@@ -82,3 +80,15 @@ def update_status(tracking_number: str, update: ShipmentUpdate, db: Session = De
     db.commit()
     db.refresh(shipment)
     return shipment
+
+@app.delete("/shipments/{tracking_number}", status_code=204)
+def delete_shipment(tracking_number: str, db: Session = Depends(get_db)):
+    shipment = db.query(models.Shipment).filter(
+        models.Shipment.tracking_number == tracking_number).first()
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+    
+
+    db.delete(shipment)
+    db.commit()
+    
