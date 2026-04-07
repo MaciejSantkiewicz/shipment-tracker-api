@@ -4,6 +4,9 @@ from pydantic import BaseModel
 from datetime import datetime
 from app.database import SessionLocal, engine, Base
 from app import models
+from app.models import ShipmentStatus
+
+from sqlalchemy import Enum as SAEnum
 
 Base.metadata.create_all(bind=engine)
 
@@ -26,7 +29,7 @@ class ShipmentCreate(BaseModel):
     destination: str
 
 class ShipmentUpdate(BaseModel):
-    status: str
+    status: ShipmentStatus
 
 
 # --- Endpoints ---
