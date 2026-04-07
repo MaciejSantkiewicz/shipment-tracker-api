@@ -27,6 +27,7 @@ Inspired by real-world e-commerce integration experience (DHL eConnect REST API,
 | GET | `/shipments/` | Get all shipments |
 | GET | `/shipments/{tracking_number}` | Get shipment by tracking number |
 | PATCH | `/shipments/{tracking_number}/status` | Update shipment status |
+| DELETE | `/shipments/{tracking_number}` | Delete shipment |
 
 ---
 
