@@ -5,7 +5,7 @@ from datetime import datetime
 from app.database import SessionLocal, engine, Base
 from app import models
 from app.models import ShipmentStatus
-
+from typing import Optional
 
 Base.metadata.create_all(bind=engine)
 
@@ -54,8 +54,14 @@ def create_shipment(shipment: ShipmentCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/shipments/")
-def get_all_shipments(db: Session = Depends(get_db)):
-    return db.query(models.Shipment).all()
+def get_all_shipments(status: Optional[ShipmentStatus] = None, db: Session = Depends(get_db)):
+    if status == None:
+        return db.query(models.Shipment).all()
+    else:
+        return db.query(models.Shipment).filter(models.Shipment.status == status).all()
+
+
+        
 
 
 @app.get("/shipments/{tracking_number}")
