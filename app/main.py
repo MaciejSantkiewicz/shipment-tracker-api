@@ -55,10 +55,10 @@ def create_shipment(shipment: ShipmentCreate, db: Session = Depends(get_db)):
 
 @app.get("/shipments/")
 def get_all_shipments(status: Optional[ShipmentStatus] = None, db: Session = Depends(get_db)):
-    if status == None:
-        return db.query(models.Shipment).all()
-    else:
-        return db.query(models.Shipment).filter(models.Shipment.status == status).all()
+    query = db.query(models.Shipment)
+    if status:
+            query = query.filter(models.Shipment.status == status)
+    return query.all()
 
 
         
