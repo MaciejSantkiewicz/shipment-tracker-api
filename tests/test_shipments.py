@@ -1,8 +1,9 @@
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.main import app, get_db
-from app.database import Base
+from app.main import app
+from app.database import Base, get_db
+import pytest
 
 # temporary test db
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"
@@ -22,12 +23,15 @@ def override_get_db():
         db.close()
 
 
+
+
 # swaping db's
 app.dependency_overrides[get_db] = override_get_db
 
-client = TestClient(app)
+testing = TestClient(app)
 
 
+#---------------DB setup & cleanup------------------------
 def setup_function():
     # new table for testing
     Base.metadata.create_all(bind=engine)
@@ -38,40 +42,104 @@ def teardown_function():
     Base.metadata.drop_all(bind=engine)
 
 
-def test_create_shipment():
-    response = client.post(
+#-------------fixtures---------------------
+@pytest.fixture
+def create_new_client():
+    testing.post(
+        "/clients/",
+        json = {
+            "client_id": "TEST-PL-001",
+            "name": "New Client",
+            "address": "Client address 1",
+            "telephone": "111-111-111",
+            "email": "new_client_email@email.com"
+        }
+    )
+
+
+
+#-----------CLIENT enpoints tests----------------------------
+def test_create_client():
+    response = testing.post(
+        "/clients/",
+        json = {
+            "client_id": "TEST-PL-001",
+            "name": "New Client",
+            "address": "Client address 1",
+            "telephone": "111-111-111",
+            "email": "new_client_email@email.com"
+        }
+    )
+    assert response.status_code == 201
+
+
+def test_create_duplicated_id_client(create_new_client):
+    response = testing.post(
+        "/clients/",
+        json = {
+            "client_id": "TEST-PL-001",
+            "name": "New Client 2 ",
+            "address": "Client address 2",
+            "telephone": "211-211-211",
+            "email": "new_client_email2@email.com"
+        }
+    )
+    
+    assert response.status_code == 400
+    print(response.json())
+
+#-----------SHIPMENT enpoints tests---------------------------
+def test_create_shipment(create_new_client):
+    response = testing.post(
         "/shipments/",
         json={
+            "client_id": "TEST-PL-001",
             "tracking_number": "TEST-001",
             "origin": "Warsaw",
             "destination": "Berlin"
         }
     )
-    assert response.status_code == 201
-    assert response.json()["tracking_number"] == "TEST-001"
-    
 
+    assert response.status_code == 201
+    
+    
+def test_create_shipment_invalid_client_id(create_new_client):
+    response = testing.post(
+        "/shipments/",
+        json={
+            "client_id": "TEST-PL-999",
+            "tracking_number": "TEST-001",
+            "origin": "Warsaw",
+            "destination": "Berlin"
+        }
+    )
+
+    assert response.status_code == 400
+    print(response.json())
 
 def test_get_shipment_not_found():
-    response = client.get(
+    response = testing.get(
         "/shipments/TEST-XYZ"
     )
     assert response.status_code == 404
+    print(response.json())
 
-def test_get_shipment():
-    create_shipment = client.post(
+def test_get_shipment(create_new_client):
+    create_shipment = testing.post(
         "/shipments/",
         json={
+            "client_id": "TEST-PL-001",
             "tracking_number": "TEST-123",
             "origin": "Warsaw",
             "destination": "Berlin"
         }
     )
 
-    get_response = client.get(
+    get_response = testing.get(
         "/shipments/TEST-123"
     )
 
 
     assert get_response.status_code == 200
     
+

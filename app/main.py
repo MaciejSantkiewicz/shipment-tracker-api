@@ -1,35 +1,20 @@
 from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from datetime import datetime
-from app.database import SessionLocal, engine, Base
-from app import models
-from app.models import ShipmentStatus
 from typing import Optional
+from sqlalchemy.orm import Session
+from datetime import datetime
+
+from app.database import engine, Base, get_db
+from app import models
+from app.routers import clients
+
+from app.schemas import ShipmentCreate, ShipmentUpdate
+from app.models import ShipmentStatus
+
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Shipment Tracker API", version="1.0.0")
-
-
-# --- Dependency ---
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-# --- Pydantic data validation ---
-class ShipmentCreate(BaseModel):
-    tracking_number: str
-    origin: str
-    destination: str
-
-class ShipmentUpdate(BaseModel):
-    status: ShipmentStatus
-
+app.include_router(clients.router)
 
 # --- Endpoints ---
 
@@ -45,6 +30,12 @@ def create_shipment(shipment: ShipmentCreate, db: Session = Depends(get_db)):
     ).first()
     if existing:
         raise HTTPException(status_code=400, detail="Tracking number already exists")
+    
+    exisitng_client_id = db.query(models.Client).filter(
+        models.Client.client_id == shipment.client_id
+    ).first()
+    if not exisitng_client_id:
+        raise HTTPException(status_code=400, detail="Client ID not found")
 
     db_shipment = models.Shipment(**shipment.model_dump())
     db.add(db_shipment)
@@ -60,8 +51,6 @@ def get_all_shipments(status: Optional[ShipmentStatus] = None, db: Session = Dep
             query = query.filter(models.Shipment.status == status)
     return query.all()
 
-
-        
 
 
 @app.get("/shipments/{tracking_number}")

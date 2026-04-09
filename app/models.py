@@ -3,6 +3,9 @@ from datetime import datetime
 from app.database import Base
 from enum import Enum
 from sqlalchemy import Enum as SAEnum
+from app.database import SessionLocal
+
+
 
 class ShipmentStatus(str, Enum):
     created = "created"
