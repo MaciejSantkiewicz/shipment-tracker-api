@@ -18,8 +18,9 @@ A RESTful API for tracking shipments — built with FastAPI, SQLAlchemy, and SQL
 
 ## 📋 Endpoints
 
+### Shipments
 | Method | Endpoint | Description |
-|---|SHIPMENTS|---|
+|---|---|---|
 | GET | `/` | Health check |
 | POST | `/shipments/` | Create a new shipment |
 | GET | `/shipments/` | Get all shipments |
@@ -27,10 +28,11 @@ A RESTful API for tracking shipments — built with FastAPI, SQLAlchemy, and SQL
 | PATCH | `/shipments/{tracking_number}/status` | Update shipment status |
 | DELETE | `/shipments/{tracking_number}` | Delete shipment |
 
-|---|CLIENTS|---|
-| GET | `clients` | Get all clients|
-| POST | `clients` | Create a new client|
-
+### Clients
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/clients/` | Get all clients |
+| POST | `/clients/` | Create a new client |
 ---
 
 ## ⚙️ Setup & Run
