@@ -1,17 +1,78 @@
 import streamlit as st
 import requests
 
+from app.models import ShipmentStatus
+
 BASE_URL = "http://127.0.0.1:8000"
 
-
-# response = requests.get(f"{BASE_URL}/shipments/")
-# data = response.json()
 
 st.title("📦 Shipments")
 
 
 
 st.sidebar.title("Filters")
+
+with st.expander("Add shipment"):
+    with st.form("new_shipment", clear_on_submit = True):
+        client_id = st.text_input("Client ID")
+        tracking_number = st.text_input("Tracking number")
+        origin = st.text_input("Origin")
+        destination = st.text_input("Destination")
+
+        submitted = st.form_submit_button("Create Shipment")
+
+        if submitted:
+            response = requests.post(
+                f"{BASE_URL}/shipments/",
+                json={
+                    "client_id": client_id,
+                    "tracking_number": tracking_number,
+                    "origin": origin,
+                    "destination": destination,
+                }
+            )
+            if response.status_code == 201:
+                st.success("Shipemnt created successfully!")
+            else:
+                st.error(f"Error: {response.json()['detail']}")
+
+with st.expander("Delete shipment"):
+    with st.form("delete_shipment", clear_on_submit = True):
+        tracking_number = st.text_input("Tracking number")
+
+        submitted = st.form_submit_button("Delete shipment")
+
+        if submitted:
+            response = requests.delete(
+                f"{BASE_URL}/shipments/{tracking_number}"
+            )
+            if response.status_code == 204:
+                st.success("Shipemnt deleted successfully!")
+            else:
+                st.error(f"Error: {response.json()['detail']}")
+
+
+with st.expander("Update status"):
+    with st.form("update_status"):
+        tracking_number = st.text_input("Tracking number")
+        status = st.selectbox(
+            "Select status",
+            ShipmentStatus
+        )
+
+        submitted = st.form_submit_button("Update status")
+        
+        if submitted:
+            response = requests.patch(
+                f"{BASE_URL}/shipments/{tracking_number}/status",
+                json={"status": status}
+            )
+            if response.status_code == 200:
+                st.success("Shipemnt status successfully!")
+            else:
+                st.error(f"Error: {response.json()['detail']}")
+
+
 
 endpoint = st.sidebar.selectbox(
     "Select query type",
@@ -25,8 +86,9 @@ if endpoint == "All Shipments":
 elif endpoint == "Filter by Status":
     status = st.sidebar.selectbox(
         "Select status",
-        ["created", "in_transit", "delivered", "failed"]
+        ShipmentStatus
     )
+
     response = requests.get(f"{BASE_URL}/shipments/", params={"status": status})
     data = response.json()
 

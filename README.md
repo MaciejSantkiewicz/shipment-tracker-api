@@ -1,7 +1,7 @@
 # 📦 Shipment Tracker API
 
 A RESTful API for tracking shipments — built with FastAPI, SQLAlchemy, and SQLite.
-
+and GUI made with Streamlit
 ---
 
 ## 🚀 Tech Stack
@@ -13,6 +13,7 @@ A RESTful API for tracking shipments — built with FastAPI, SQLAlchemy, and SQL
 | Validation | Pydantic |
 | Server | Uvicorn |
 | Language | Python 3.14 |
+| GUI | Streamlit |
 
 ---
 
@@ -24,6 +25,9 @@ A RESTful API for tracking shipments — built with FastAPI, SQLAlchemy, and SQL
 | GET | `/` | Health check |
 | POST | `/shipments/` | Create a new shipment |
 | GET | `/shipments/` | Get all shipments |
+| GET | `/shipments/stats` | Count all shipments and group them by status |
+| GET | `/shipments/stats/filtered` | Show all shipments group with selected minimum number of shipments |
+| GET | `/shipments/with-clients` | Show all shipments with joined client id's |
 | GET | `/shipments/{tracking_number}` | Get shipment by tracking number |
 | PATCH | `/shipments/{tracking_number}/status` | Update shipment status |
 | DELETE | `/shipments/{tracking_number}` | Delete shipment |
@@ -50,11 +54,16 @@ python -m pip install -r requirements.txt
 
 # Run the server
 uvicorn app.main:app --reload
+
+# Run streamlit
+python -m streamlit run streamlit_app.py
 ```
 
 API will be available at: `http://127.0.0.1:8000`
 
 Interactive docs (Swagger UI): `http://127.0.0.1:8000/docs`
+
+Streamlit GUI will be available at: `http://localhost:8501/`
 
 ---
 
@@ -115,7 +124,7 @@ curl -X POST http://127.0.0.1:8000/shipments/ \
 - [ ] Authentication (JWT / OAuth 2.0)
 - [ ] External API integration
 - [ ] JOIN queries with SQL visibility
-- [ ] Dashboard UI (Streamlit)
+- [x] Dashboard UI (Streamlit)
 - [ ] AI anomaly detection layer
 
 ---

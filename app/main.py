@@ -89,13 +89,13 @@ def get_shipment(tracking_number: str, db: Session = Depends(get_db)):
 
 
 @app.patch("/shipments/{tracking_number}/status")
-def update_status(tracking_number: str, update: ShipmentStatus, db: Session = Depends(get_db)):
+def update_status(tracking_number: str, update: ShipmentUpdate, db: Session = Depends(get_db)):
     stmt = select(models.Shipment).where(models.Shipment.tracking_number == tracking_number)
     result = db.execute(stmt).scalars().first()
     if not result:
         raise HTTPException(status_code=404, detail="Shipment not found")
 
-    result.status = update
+    result.status = update.status
     result.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(result)
