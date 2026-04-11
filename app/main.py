@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from typing import Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from datetime import datetime
 
 from app.database import engine, Base, get_db, execute_with_sql
@@ -54,6 +54,20 @@ def get_all_shipments(status: Optional[ShipmentStatus] = None, db: Session = Dep
             stmt = stmt.where(models.Shipment.status == status)
     
     return execute_with_sql(db, stmt, False)
+
+
+@app.get("/shipments/stats")
+def shipments_stats(db: Session = Depends(get_db)):
+    stmt = select(models.Shipment.status, func.count("*").label("shipment_count")).select_from(models.Shipment).group_by(models.Shipment.status)
+
+    return execute_with_sql(db, stmt, mapping=True)
+
+@app.get("/shipments/stats/filtered")
+def shipments_status_count_check(min_count: int, db: Session = Depends(get_db)):
+    stmt = select(models.Shipment.status, func.count("*").label("shipment_count")).select_from(models.Shipment).group_by(models.Shipment.status).having(func.count("*") > min_count)
+
+    return execute_with_sql(db, stmt, mapping=True)
+
 
 
 @app.get("/shipments/with-clients")
