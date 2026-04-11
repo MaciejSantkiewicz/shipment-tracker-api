@@ -64,7 +64,7 @@ def shipments_stats(db: Session = Depends(get_db)):
 
 @app.get("/shipments/stats/filtered")
 def shipments_status_count_check(min_count: int, db: Session = Depends(get_db)):
-    stmt = select(models.Shipment.status, func.count("*").label("shipment_count")).select_from(models.Shipment).group_by(models.Shipment.status).having(func.count("*") > min_count)
+    stmt = select(models.Shipment.status, func.count("*").label("shipment_count")).select_from(models.Shipment).group_by(models.Shipment.status).having(func.count("*") >= min_count)
 
     return execute_with_sql(db, stmt, mapping=True)
 
