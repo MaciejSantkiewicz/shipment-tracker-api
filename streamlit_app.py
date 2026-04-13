@@ -18,10 +18,15 @@ Select a section from the left sidebar:
 col1, col2 = st.columns(2)
 
 with col1:
-    st.info("📦 **Shipments** — browse and filter shipments")
+    if st.button("📦 **Shipments** — browse and filter shipments"):
+        st.switch_page("pages/shipments.py")
 
-with col2:
-    st.info("👥 **Clients** — browse client data")
+
+with col1:
+    if st.button("👥 **Clients** — browse client data"):
+        st.switch_page("pages/clients.py")
+
+    
 
 st.markdown("---")
 st.caption("Every operation displays the raw SQL query — to show what happens under the hood.")

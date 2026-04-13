@@ -14,10 +14,15 @@ class ShipmentStatus(str, Enum):
     failed = "failed"
 
 
+class UserRole(str, Enum):
+    admin = "admin"
+    operator = "operator"
+
+
 class Client(Base):
     __tablename__ = "clients"
     id = Column(Integer, primary_key=True, index=True)
-    client_id = Column(String, unique=True, index=True)
+    client_id = Column(String, unique=True, index=True, nullable=False)
     active = Column(Boolean, default=True)
     name = Column(String)
     address = Column(String)
@@ -41,3 +46,14 @@ class Shipment(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     client_id = Column(Integer, ForeignKey("clients.id"))
 
+
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    active = Column(Boolean, default=True)
+    username = Column(String)
+    hashed_password = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    closed_at = Column(DateTime, default=None)

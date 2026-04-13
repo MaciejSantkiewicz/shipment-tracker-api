@@ -1,7 +1,7 @@
 # 📦 Shipment Tracker API
 
 A RESTful API for tracking shipments — built with FastAPI, SQLAlchemy, and SQLite.
-and GUI made with Streamlit
+GUI made with Streamlit
 ---
 
 ## 🚀 Tech Stack
@@ -36,7 +36,9 @@ and GUI made with Streamlit
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/clients/` | Get all clients |
+| GET | `/clients/{client_id}` | Get all clients shipments |
 | POST | `/clients/` | Create a new client |
+
 ---
 
 ## ⚙️ Setup & Run

@@ -6,9 +6,9 @@ from app.models import Client
 from app.database import get_db, execute_with_sql
 from sqlalchemy import select
 
-from app.schemas import ClientCreate
+from app.schemas import ClientCreate, ClientUpdate
 
-
+from datetime import datetime
 router = APIRouter()
 
 
@@ -31,3 +31,22 @@ def get_all_client(db: Session = Depends(get_db)):
     client_stmt = select(models.Client)
 
     return execute_with_sql(db, client_stmt, False)
+
+
+@router.patch("/clients/status/{client_id}")
+def change_client_status(client_id: str, update: ClientUpdate, db: Session = Depends(get_db)):
+    stmt = select(models.Client).where(models.Client.client_id == client_id)
+    result = db.execute(stmt).scalars().first()
+    if not result:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+
+    result.active = update.active
+    result.updated_at = datetime.utcnow()
+    if not update.active:
+        result.closed_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(result)
+    return execute_with_sql(db, stmt, False, True)
+
+    
