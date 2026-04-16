@@ -4,7 +4,7 @@ from app.models import ShipmentStatus
 import re
 
 class ShipmentCreate(BaseModel):
-    client_id: str = Field(min_length= 5, max_length= 5)
+    client_id: str = Field(min_length= 6, max_length= 6)
     tracking_number: str = Field(min_length= 1, max_length= 10)
     origin: str = Field(min_length= 2, max_length= 2)
     destination: str = Field(min_length= 2, max_length= 2)

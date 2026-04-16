@@ -9,6 +9,9 @@ from app import models
 from app.models import ShipmentStatus
 from app.database import get_db, execute_with_sql
 
+from app.routers.auth import get_current_user
+
+
 from app.schemas import ShipmentUpdate, ShipmentCreate
 
 
@@ -92,7 +95,7 @@ def update_status(tracking_number: str, update: ShipmentUpdate, db: Session = De
 
 
 @router.delete("/shipments/{tracking_number}", status_code=204)
-def delete_shipment(tracking_number: str, db: Session = Depends(get_db)):
+def delete_shipment(tracking_number: str, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     stmt = select(models.Shipment).where(models.Shipment.tracking_number == tracking_number)
     result = db.execute(stmt).scalars().first()
     if not result:
