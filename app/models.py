@@ -16,7 +16,8 @@ class ShipmentStatus(str, Enum):
 
 class UserRole(str, Enum):
     admin = "admin"
-    operator = "operator"
+    client_user = "client_user"
+    employee = "employee"
 
 
 class Client(Base):
@@ -34,7 +35,6 @@ class Client(Base):
 
 
 
-
 class Shipment(Base):
     __tablename__ = "shipments"
     id = Column(Integer, primary_key=True, index=True)
@@ -47,13 +47,20 @@ class Shipment(Base):
     client_id = Column(Integer, ForeignKey("clients.id"))
 
 
-
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
+    role = Column(SAEnum(UserRole), default=UserRole.client_user)
     active = Column(Boolean, default=True)
     username = Column(String)
     hashed_password = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     closed_at = Column(DateTime, default=None)
+    
+
+class UserClient(Base):
+    __tablename__ = "user_clients"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)

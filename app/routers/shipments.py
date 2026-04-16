@@ -6,7 +6,7 @@ from typing import Optional
 from datetime import datetime
 
 from app import models
-from app.models import ShipmentStatus
+from app.models import ShipmentStatus, UserRole
 from app.database import get_db, execute_with_sql
 
 from app.routers.auth import get_current_user
@@ -15,10 +15,33 @@ from app.routers.auth import get_current_user
 from app.schemas import ShipmentUpdate, ShipmentCreate
 
 
-router = APIRouter()
+router = APIRouter(tags=["shipments"])
+
+
+
+@router.get("/shipments/")
+def get_all_shipments(status: Optional[ShipmentStatus] = None, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    if current_user.role == UserRole.admin:
+        stmt = select(models.Shipment)
+
+    else:
+        stmt = select(models.Shipment).where(
+            models.Shipment.client_id.in_(
+                select(models.UserClient.client_id).where(
+                    models.UserClient.user_id == current_user.id
+                )
+            )
+        )
+
+    if status:
+        stmt = stmt.where(models.Shipment.status == status)
+    
+    return execute_with_sql(db, stmt, False)
 
 @router.post("/shipments/", status_code=201)
-def create_shipment(shipment: ShipmentCreate, db: Session = Depends(get_db)):
+def create_shipment(shipment: ShipmentCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+
+
     client_stmt = select(models.Client).where(models.Client.client_id == shipment.client_id)
     client_result = db.execute(client_stmt).scalars().first()
 
@@ -38,14 +61,6 @@ def create_shipment(shipment: ShipmentCreate, db: Session = Depends(get_db)):
     db.refresh(db_shipment)
     return db_shipment
 
-
-@router.get("/shipments/")
-def get_all_shipments(status: Optional[ShipmentStatus] = None, db: Session = Depends(get_db)):
-    stmt = select(models.Shipment)
-    if status:
-            stmt = stmt.where(models.Shipment.status == status)
-    
-    return execute_with_sql(db, stmt, False)
 
 
 @router.get("/shipments/stats")
@@ -73,6 +88,7 @@ def get_shipments_with_clients(db: Session = Depends(get_db)):
 
 @router.get("/shipments/{tracking_number}")
 def get_shipment(tracking_number: str, db: Session = Depends(get_db)):
+
     stmt = select(models.Shipment).where(models.Shipment.tracking_number == tracking_number)
     result = db.execute(stmt).scalars().first()
     if not result:

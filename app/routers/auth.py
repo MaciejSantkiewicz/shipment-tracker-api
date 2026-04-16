@@ -4,13 +4,13 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from app.database import get_db
+from app.database import get_db, execute_with_sql
 from app import models
-from app.models import User
-from app.schemas import UserCreate, Token
+from app.models import User, UserRole
+from app.schemas import UserCreate, Token, ClientUserCreate
 from sqlalchemy import select
 
-router = APIRouter()
+router = APIRouter(tags=["auth"])
 
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
@@ -53,6 +53,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
+@router.get("/auth/users")
+def get_all_users(db:Session = Depends(get_db)):
+    stms = select(models.User)
+    return execute_with_sql(db, stms, False)
+
 @router.post("/auth/register", status_code=201)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     stmt = select(models.User).where(models.User.username == user.username)
@@ -62,7 +67,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     
     db_user = models.User(
         username=user.username,
-        hashed_password=hash_password(user.password)
+        hashed_password=hash_password(user.password),
+        role = user.role
     )
     db.add(db_user)
     db.commit()
@@ -83,3 +89,26 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
 
     return {"access_token": token, "token_type": "bearer"}
 
+
+@router.post("/auth/users/clients")
+def add_client_to_user(new_connection: ClientUserCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    if current_user.role != UserRole.admin:
+        print(current_user.role)
+        raise HTTPException(status_code=403, detail="Unauthorized access")
+    
+    user_stmt = select(models.User).where(models.User.id == new_connection.user_id)
+    user_result = db.execute(user_stmt).scalars().first()
+    if not user_result:
+        raise HTTPException(status_code=401, detail="User ID doesnt't exists.")
+    
+    client_stmt = select(models.Client).where(models.Client.id == new_connection.client_id)
+    client_result = db.execute(client_stmt).scalars().first()
+    if not client_result:
+        raise HTTPException(status_code=401, detail="Client ID doesnt't exists.")
+    
+    db_userclient = models.UserClient(**new_connection.model_dump())
+    db.add(db_userclient)
+    db.commit()
+    db.refresh(db_userclient)
+    return db_userclient
+    

@@ -9,7 +9,7 @@ from sqlalchemy import select
 from app.schemas import ClientCreate, ClientUpdate
 
 from datetime import datetime
-router = APIRouter()
+router = APIRouter(tags=["clients"])
 
 
 @router.post("/clients/", status_code=201)
