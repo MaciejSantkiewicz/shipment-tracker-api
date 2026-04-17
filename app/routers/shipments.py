@@ -9,7 +9,8 @@ from app import models
 from app.models import ShipmentStatus, UserRole
 from app.database import get_db, execute_with_sql
 
-from app.routers.auth import get_current_user
+
+from app.routers.auth import get_current_user, require_role
 
 
 from app.schemas import ShipmentUpdate, ShipmentCreate
@@ -20,7 +21,9 @@ router = APIRouter(tags=["shipments"])
 
 
 @router.get("/shipments/")
-def get_all_shipments(status: Optional[ShipmentStatus] = None, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+def get_all_shipments(status: Optional[ShipmentStatus] = None, db: Session = Depends(get_db), 
+                      current_user = Depends(require_role(UserRole.admin, UserRole.employee, UserRole.client_user))):
+    
     if current_user.role == UserRole.admin:
         stmt = select(models.Shipment)
 
@@ -39,8 +42,22 @@ def get_all_shipments(status: Optional[ShipmentStatus] = None, db: Session = Dep
     return execute_with_sql(db, stmt, False)
 
 @router.post("/shipments/", status_code=201)
-def create_shipment(shipment: ShipmentCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+def create_shipment(shipment: ShipmentCreate, db: Session = Depends(get_db), 
+                    current_user = Depends(require_role(UserRole.admin, UserRole.employee, UserRole.client_user))):
 
+    if current_user.role != UserRole.admin:
+        client = db.execute(
+            select(models.Client).where(models.Client.client_id == shipment.client_id)).scalars().first()
+        
+        access = db.execute(
+            select(models.UserClient).where(
+                models.UserClient.user_id == current_user.id,
+                models.UserClient.client_id == client.id
+            )
+        ).scalars().first()
+
+        if not access:
+            raise HTTPException(status_code=403, detail="No access to this client")
 
     client_stmt = select(models.Client).where(models.Client.client_id == shipment.client_id)
     client_result = db.execute(client_stmt).scalars().first()

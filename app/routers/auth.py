@@ -52,19 +52,28 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
+def require_role(*roles: UserRole):
+    def check_role(current_user = Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Unauthorized access")
+        return current_user
+    return check_role
+
 
 @router.get("/auth/users")
-def get_all_users(db:Session = Depends(get_db)):
+def get_all_users(db:Session = Depends(get_db), current_user = Depends(require_role(UserRole.admin))):
     stms = select(models.User)
     return execute_with_sql(db, stms, False)
 
 @router.post("/auth/register", status_code=201)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
+
     stmt = select(models.User).where(models.User.username == user.username)
     result = db.execute(stmt).scalars().first()
     if result:
         raise HTTPException(status_code=400, detail="User already exists.")
-    
+
+
     db_user = models.User(
         username=user.username,
         hashed_password=hash_password(user.password),
@@ -90,23 +99,27 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
     return {"access_token": token, "token_type": "bearer"}
 
 
+
 @router.post("/auth/users/clients")
-def add_client_to_user(new_connection: ClientUserCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    if current_user.role != UserRole.admin:
-        print(current_user.role)
-        raise HTTPException(status_code=403, detail="Unauthorized access")
+def add_client_to_user(new_connection: ClientUserCreate, db: Session = Depends(get_db), 
+                       current_user = Depends(require_role(UserRole.admin, UserRole.employee)) ):
     
-    user_stmt = select(models.User).where(models.User.id == new_connection.user_id)
+    user_stmt = select(models.User).where(models.User.username == new_connection.username)
     user_result = db.execute(user_stmt).scalars().first()
     if not user_result:
         raise HTTPException(status_code=401, detail="User ID doesnt't exists.")
     
-    client_stmt = select(models.Client).where(models.Client.id == new_connection.client_id)
+    userid = user_result.id
+    
+    client_stmt = select(models.Client).where(models.Client.client_id == new_connection.client_id)
     client_result = db.execute(client_stmt).scalars().first()
     if not client_result:
         raise HTTPException(status_code=401, detail="Client ID doesnt't exists.")
     
-    db_userclient = models.UserClient(**new_connection.model_dump())
+    clientid = client_result.id
+
+    
+    db_userclient = models.UserClient(user_id = userid, client_id = clientid)
     db.add(db_userclient)
     db.commit()
     db.refresh(db_userclient)

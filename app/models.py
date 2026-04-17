@@ -35,6 +35,7 @@ class Client(Base):
 
 
 
+
 class Shipment(Base):
     __tablename__ = "shipments"
     id = Column(Integer, primary_key=True, index=True)
@@ -45,6 +46,7 @@ class Shipment(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     client_id = Column(Integer, ForeignKey("clients.id"))
+
 
 
 class User(Base):
@@ -58,6 +60,7 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     closed_at = Column(DateTime, default=None)
     
+
 
 class UserClient(Base):
     __tablename__ = "user_clients"

@@ -29,6 +29,11 @@ class ClientCreate(BaseModel):
 class ClientUpdate(BaseModel):
     active: bool
 
+class ClientDetailsUpdate(BaseModel):
+    name: str = Field(min_length= 2, max_length= 50)
+    address: str = Field(min_length= 2, max_length= 50)
+    telephone: str = Field(min_length= 2, mmax_length= 15)
+    email: str = Field(min_length= 2, max_length= 25)
 
 class UserCreate(BaseModel):
     username: str = Field(min_length=3, max_length=50)
@@ -37,8 +42,8 @@ class UserCreate(BaseModel):
 
 
 class ClientUserCreate(BaseModel):
-    user_id: int
-    client_id: int
+    username: str = Field(min_length=3, max_length=50)
+    client_id: str = Field(min_length= 6, max_lengths= 6)
 
 class Token(BaseModel):
     access_token: str
