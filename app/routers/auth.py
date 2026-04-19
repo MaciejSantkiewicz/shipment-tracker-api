@@ -3,12 +3,13 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+from typing import Optional
 from passlib.context import CryptContext
 from app.database import get_db, execute_with_sql
 from app import models
 from app.models import User, UserRole
 from app.schemas import UserCreate, Token, ClientUserCreate
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 router = APIRouter(tags=["auth"])
 
@@ -62,8 +63,8 @@ def require_role(*roles: UserRole):
 
 @router.get("/auth/users")
 def get_all_users(db:Session = Depends(get_db), current_user = Depends(require_role(UserRole.admin))):
-    stms = select(models.User)
-    return execute_with_sql(db, stms, False)
+    stmt = select(models.User)
+    return execute_with_sql(db, stmt, False)
 
 @router.post("/auth/register", status_code=201)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -104,24 +105,88 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
 def add_client_to_user(new_connection: ClientUserCreate, db: Session = Depends(get_db), 
                        current_user = Depends(require_role(UserRole.admin, UserRole.employee)) ):
     
+    #check if client user
     user_stmt = select(models.User).where(models.User.username == new_connection.username)
     user_result = db.execute(user_stmt).scalars().first()
     if not user_result:
-        raise HTTPException(status_code=401, detail="User ID doesnt't exists.")
+        raise HTTPException(status_code=404, detail="User ID doesnt't exists.")
     
+
     userid = user_result.id
     
+    #check if client exists
     client_stmt = select(models.Client).where(models.Client.client_id == new_connection.client_id)
     client_result = db.execute(client_stmt).scalars().first()
     if not client_result:
-        raise HTTPException(status_code=401, detail="Client ID doesnt't exists.")
+        raise HTTPException(status_code=404, detail="Client ID doesnt't exists.")
     
     clientid = client_result.id
-
     
+    #check for user limit
+    if user_result.role == UserRole.client_user:
+        check_client_limit = select(func.count()).select_from(models.UserClient).where(models.UserClient.user_id == userid)
+        check_client_limit_result = db.execute(check_client_limit).scalars().one()
+        if check_client_limit_result >= 1:
+            raise HTTPException(status_code=409, detail="Client User cannot have more 1 conneted client")
+    
+    
+
+    #check for existing connection
+    existing_connection = select(models.UserClient).where(
+        models.UserClient.user_id == userid, models.UserClient.client_id == clientid)
+
+    existing_connection_result = db.execute(existing_connection).scalars().first()
+    
+    if existing_connection_result:
+        raise HTTPException(status_code=409, detail="User is already assigned to this client.")
+    
+
+
     db_userclient = models.UserClient(user_id = userid, client_id = clientid)
+
     db.add(db_userclient)
     db.commit()
     db.refresh(db_userclient)
     return db_userclient
+
+@router.post("/auth/users/connection")
+def see_all_connection(db: Session = Depends(get_db), 
+                       current_user = Depends(require_role(UserRole.admin))):
     
+    stmt = select(models.UserClient)
+    results = db.execute(stmt).scalars().all()
+    output = []
+    for connection in results:
+        output.append({
+            "id": connection.id,
+            "username": connection.user_table.username,
+            "user_role": connection.user_table.role,
+            "client_id": connection.client_table.client_id
+        })
+    
+    return output
+
+
+    # return execute_with_sql(db, stmt, False)
+
+
+@router.post("/auth/users/client/connection")
+def see_user_connection(user_id: Optional[str], db: Session = Depends(get_db), 
+                       current_user = Depends(require_role(UserRole.admin, UserRole.employee, UserRole.client_user))):
+    
+    stmt = select(models.UserClient).where(models.UserClient.user_id == current_user.id)
+    
+    if user_id: 
+        stmt = select(models.UserClient).where(models.UserClient.user_id == user_id)
+    
+    results = db.execute(stmt).scalars().all()
+    output = []
+    for connection in results:
+        output.append({
+            "id": connection.id,
+            "username": connection.user_table.username,
+            "user_role": connection.user_table.role,
+            "client_id": connection.client_table.client_id
+        })
+    
+    return output

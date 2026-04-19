@@ -108,4 +108,3 @@ def change_client_details(
     db.commit()
     db.refresh(result)
     return execute_with_sql(db, stmt, False, True)
-

@@ -3,6 +3,7 @@ from datetime import datetime
 from app.database import Base
 from enum import Enum
 from sqlalchemy import Enum as SAEnum
+from sqlalchemy.orm import relationship
 from app.database import SessionLocal
 
 
@@ -67,3 +68,5 @@ class UserClient(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    user_table = relationship("User")
+    client_table = relationship("Client")
