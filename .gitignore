@@ -4,4 +4,4 @@ __pycache__/
 *.db
 .env
 .vscode/
-shipmments.db
+shipments.db

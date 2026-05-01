@@ -65,7 +65,7 @@ def seed():
 
 
         # 4. create shipments
-        for i in range (5):
+        for i in range (0):
             all_clients = select(func.count("*")).select_from(models.Client)
             random_id = randint(1, db.execute(all_clients).scalars().first())
             print(random_id)
