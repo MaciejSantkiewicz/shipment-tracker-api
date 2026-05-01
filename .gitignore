@@ -4,6 +4,5 @@ __pycache__/
 *.db
 .env
 .vscode/
-seed.py
 pages/
 streamlit_app.py
