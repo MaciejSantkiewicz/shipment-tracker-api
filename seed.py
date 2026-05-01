@@ -3,7 +3,6 @@ from random import randint
 from app.database import SessionLocal
 from app import models
 from app.models import ShipmentStatus, UserRole
-from app.schemas import UserRole
 from sqlalchemy import select, func
 
 
@@ -66,9 +65,10 @@ def seed():
 
 
         # 4. create shipments
-        for i in range (10):
+        for i in range (5):
             all_clients = select(func.count("*")).select_from(models.Client)
             random_id = randint(1, db.execute(all_clients).scalars().first())
+            print(random_id)
             search_client = select(models.Client).where(models.Client.id == random_id)
             result = db.execute(search_client).scalars().one()
 
