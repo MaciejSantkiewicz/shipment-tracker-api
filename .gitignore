@@ -4,5 +4,3 @@ __pycache__/
 *.db
 .env
 .vscode/
-pages/
-streamlit_app.py
