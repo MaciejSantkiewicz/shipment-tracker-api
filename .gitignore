@@ -5,6 +5,7 @@ __pycache__/
 .env
 .vscode/
 shipments.db
-__pycache__/
-*.pyc
 *.pyo
+.pytest_cache
+tests/__pycache__/
+app/__pycache__/
