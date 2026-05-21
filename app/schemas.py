@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from app.models import ShipmentStatus
+from app.models import ShipmentStatus, UserRole
 
 import re
 
@@ -29,10 +29,21 @@ class ClientCreate(BaseModel):
 class ClientUpdate(BaseModel):
     active: bool
 
+class ClientDetailsUpdate(BaseModel):
+    name: str = Field(min_length= 2, max_length= 50)
+    address: str = Field(min_length= 2, max_length= 50)
+    telephone: str = Field(min_length= 2, mmax_length= 15)
+    email: str = Field(min_length= 2, max_length= 25)
 
 class UserCreate(BaseModel):
     username: str = Field(min_length=3, max_length=50)
     password: str = Field(min_length=8, max_length=72)
+    role: UserRole = Field(default = UserRole.client_user)
+
+
+class ClientUserCreate(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    client_id: str = Field(min_length= 5, max_lengths= 5)
 
 class Token(BaseModel):
     access_token: str
